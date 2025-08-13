@@ -22,7 +22,7 @@ GPUS=$(nvidia-smi -L | wc -l)                      # Number of detected GPUs
 HOSTNAME=$(hostname)                               # Hostname for Telegram notifications
 
 # Delay before saving settings on first run (seconds)
-INITIAL_DELAY=120
+INITIAL_DELAY=55
 
 # --- Helper Functions ---
 send_telegram() {
