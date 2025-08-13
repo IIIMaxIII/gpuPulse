@@ -1,3 +1,8 @@
-install <pre id="command"><code>curl -fsSL https://github.com/IIIMaxIII/NoFly/raw/refs/heads/main/lom_v2.sh -o /hive/bin/lom_v2.sh && chmod +x /hive/bin/lom_v2.sh && grep -qxF '* * * * * /hive/bin/lom_v2.sh >/dev/null 2>&1' /hive/etc/crontab.root || echo '* * * * * /hive/bin/lom_v2.sh >/dev/null 2>&1' >> /hive/etc/crontab.root</code></pre> reboot
+install
+<pre id="command"><code>curl -fsSL https://github.com/IIIMaxIII/NoFly/raw/refs/heads/main/lom_v2.sh -o /hive/bin/lom_v2.sh && chmod +x /hive/bin/lom_v2.sh && grep -qxF '* * * * * /hive/bin/lom_v2.sh >/dev/null 2>&1' /hive/etc/crontab.root || echo '* * * * * /hive/bin/lom_v2.sh >/dev/null 2>&1' >> /hive/etc/crontab.root</code></pre>
+reboot
 
-remove <pre id="command"><code>rm -f /hive/bin/lom_v2.sh && sed -i '/lom_v2.sh/d' /hive/etc/crontab.root</code></pre> and reboot
+
+remove
+<pre id="command"><code>rm -f /hive/bin/lom_v2.sh && sed -i '/lom_v2.sh/d' /hive/etc/crontab.root</code></pre>
+and reboot
