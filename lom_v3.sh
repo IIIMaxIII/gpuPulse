@@ -1,48 +1,30 @@
 #!/bin/bash
 
 # --- Configuration ---
-# Hosts to ping for internet connectivity check
-CHECK_HOSTS=("8.8.8.8" "1.1.1.1" "9.9.9.9" "ya.ru")
+CHECK_HOSTS=("8.8.8.8" "1.1.1.1" "9.9.9.9" "ya.ru") # Hosts to check for internet connectivity
+ORIGINAL_FILE="/var/tmp/gpu_nvtool_original"       # File to store original GPU settings
+COUNTER_FILE="/var/tmp/gpu_nvtool_counters"        # File to store counters and state
+NVTOOL="/hive/sbin/nvtool"                         # Path to nvtool utility
 
-# File to store original GPU settings (clocks, offsets, power limit)
-ORIGINAL_FILE="/var/tmp/gpu_nvtool_original"
-
-# File to store counters and current state (high/low)
-COUNTER_FILE="/var/tmp/gpu_nvtool_counters"
-
-# Path to nvtool utility for NVIDIA GPU tuning
-NVTOOL="/hive/sbin/nvtool"
-
-# Telegram bot configuration
 TELEGRAM_BOT_TOKEN="your_bot_token_here"
 TELEGRAM_CHAT_ID="your_chat_id_here"
 TELEGRAM_API_URL="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
 
-# Default low-performance values when internet is down
-LOW_CORE=300           # GPU core clock (MHz)
-LOW_MEM=405            # GPU memory clock (MHz)
-LOW_CORE_OFFSET=0      # Core clock offset
-LOW_MEM_OFFSET=0       # Memory clock offset
-LOW_PL=100             # Power limit in watts
+# Low-power safe mode values
+LOW_CORE=300
+LOW_MEM=405
+LOW_CORE_OFFSET=0
+LOW_MEM_OFFSET=0
+LOW_PL=100
 
-# Number of consecutive checks required to trigger a state change
-THRESHOLD=5
+THRESHOLD=3                                        # Number of checks before switching state
+GPUS=$(nvidia-smi -L | wc -l)                      # Number of detected GPUs
+HOSTNAME=$(hostname)                               # Hostname for Telegram notifications
 
-# Number of detected GPUs
-GPUS=$(nvidia-smi -L | wc -l)
-
-# Hostname for identification in messages
-HOSTNAME=$(hostname)
-
-# --- Early check: is miner running in screen? ---
-if ! screen -list | grep -q "\.miner"; then
-    echo "Screen-сессия 'miner' не найдена — выходим"
-    exit 0
-fi
+# Delay before saving settings on first run (seconds)
+INITIAL_DELAY=120
 
 # --- Helper Functions ---
-
-# Send Telegram message
 send_telegram() {
     local message="$1"
     curl -s -X POST "$TELEGRAM_API_URL" \
@@ -51,7 +33,6 @@ send_telegram() {
         -d parse_mode="Markdown" > /dev/null
 }
 
-# Load counters and current state from file
 load_counters() {
     if [ ! -f "$COUNTER_FILE" ]; then
         echo -e "high:0\nlow:0\nstate:high" > "$COUNTER_FILE"
@@ -61,7 +42,6 @@ load_counters() {
     CURRENT_STATE=$(grep '^state:' "$COUNTER_FILE" | cut -d: -f2)
 }
 
-# Save current counters and state to file
 save_counters() {
     {
         echo "high:$HIGH_COUNTER"
@@ -70,7 +50,6 @@ save_counters() {
     } > "$COUNTER_FILE"
 }
 
-# Check internet connectivity by pinging known reliable hosts
 check_internet() {
     for host in "${CHECK_HOSTS[@]}"; do
         ping -c2 -W1 "$host" &>/dev/null && return 0
@@ -78,7 +57,6 @@ check_internet() {
     return 1
 }
 
-# Save current GPU settings as "original" (used when switching back to high)
 save_original_settings() {
     > "$ORIGINAL_FILE"
     for ((i = 0; i < GPUS; i++)); do
@@ -91,23 +69,16 @@ save_original_settings() {
     done
 }
 
-# Apply GPU settings: either "high" (original) or "low" (safe mode)
-# Skips if already in requested state
 apply_settings() {
     local mode=$1
-
-    # Avoid redundant application if already in target state
     if [ "$CURRENT_STATE" = "$mode" ]; then
         return 0
     fi
-
     for ((i = 0; i < GPUS; i++)); do
         if [ "$mode" = "high" ]; then
-            # Restore original settings from file
             read CORE MEM CORE_OFFSET MEM_OFFSET PL < <(sed -n "$((i+1))p" "$ORIGINAL_FILE")
             MODE_DESCRIPTION="HIGH performance"
         else
-            # Apply low-power safe settings
             CORE=$LOW_CORE
             MEM=$LOW_MEM
             CORE_OFFSET=$LOW_CORE_OFFSET
@@ -115,8 +86,6 @@ apply_settings() {
             PL=$LOW_PL
             MODE_DESCRIPTION="LOW power"
         fi
-
-        # Apply settings via nvtool
         ${NVTOOL} --index $i \
             --setcore "$CORE" \
             --setmem "$MEM" \
@@ -124,8 +93,6 @@ apply_settings() {
             --setmemoffset "$MEM_OFFSET" \
             --setpl "$PL"
     done
-
-    # Send Telegram notification about mode change
     local message="🖥️ *${HOSTNAME}*: GPU mode changed to *${MODE_DESCRIPTION}*"
     send_telegram "$message"
 }
@@ -133,39 +100,33 @@ apply_settings() {
 # --- Main Logic ---
 load_counters
 
-# Save original settings if not already saved
+# On first run, wait before saving original settings
 if [ ! -s "$ORIGINAL_FILE" ]; then
+    echo "First run — waiting ${INITIAL_DELAY} seconds before saving settings..."
+    sleep $INITIAL_DELAY
     save_original_settings
-    # Notify about initial setup
     send_telegram "🖥️ *${HOSTNAME}*: GPU monitoring initialized with ${GPUS} GPU(s)"
 fi
 
-# Check internet connectivity
+# Internet check and mode switching
 if check_internet; then
-    # Internet is UP: reset low counter, increment high counter
     LOW_COUNTER=0
     ((HIGH_COUNTER++))
-
-    # If threshold is reached and we're not already in high mode
     if (( HIGH_COUNTER >= THRESHOLD )) && [ "$CURRENT_STATE" != "high" ]; then
-        echo "Internet restored: switching to HIGH performance mode, start miner"
+        echo "Internet restored: switching to HIGH performance mode, starting miner"
         apply_settings high
         miner start
         CURRENT_STATE="high"
     fi
 else
-    # Internet is DOWN: reset high counter, increment low counter
     HIGH_COUNTER=0
     ((LOW_COUNTER++))
-
-    # If threshold is reached and we're not already in low mode
     if (( LOW_COUNTER >= THRESHOLD )) && [ "$CURRENT_STATE" != "low" ]; then
-        echo "Internet lost: switching to LOW power mode, stop miner"
+        echo "Internet lost: switching to LOW power mode, stopping miner"
         apply_settings low
         miner stop
         CURRENT_STATE="low"
     fi
 fi
 
-# Always save final state and counters at the end
 save_counters
