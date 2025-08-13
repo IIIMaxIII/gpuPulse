@@ -34,6 +34,12 @@ GPUS=$(nvidia-smi -L | wc -l)
 # Hostname for identification in messages
 HOSTNAME=$(hostname)
 
+# --- Early check: is miner running in screen? ---
+if ! screen -list | grep -q "\.miner"; then
+    echo "Screen-сессия 'miner' не найдена — выходим"
+    exit 0
+fi
+
 # --- Helper Functions ---
 
 # Send Telegram message
