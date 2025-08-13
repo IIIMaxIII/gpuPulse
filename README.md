@@ -6,3 +6,6 @@ reboot
 remove
 <pre id="command"><code>rm -f /hive/bin/lom_v2.sh && sed -i '/lom_v2.sh/d' /hive/etc/crontab.root</code></pre>
 and reboot
+
+
+cat /var/tmp/gpu_nvtool_original
