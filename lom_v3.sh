@@ -26,7 +26,7 @@ LOW_MEM_OFFSET=0       # Memory clock offset
 LOW_PL=100             # Power limit in watts
 
 # Number of consecutive checks required to trigger a state change
-THRESHOLD=3
+THRESHOLD=5
 
 # Number of detected GPUs
 GPUS=$(nvidia-smi -L | wc -l)
