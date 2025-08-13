@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CHECK_HOSTS=("8.8.8.8" "1.1.1.1" "9.9.9.9")   # Узлы для проверки интернета
+CHECK_HOSTS=("8.8.8.8" "1.1.1.1" "9.9.9.9" "ya.ru")   # Узлы для проверки интернета
 STATE_FILE="/tmp/gpu_nvtool_state.txt"         # HIGH или LOW
 ORIGINAL_FILE="/tmp/gpu_nvtool_original.txt"
 COUNTER_FILE="/tmp/gpu_nvtool_counter.txt"
@@ -87,17 +87,12 @@ reduce_settings() {
 # Проверка доступности хотя бы одного хоста
 check_internet() {
     for host in "${CHECK_HOSTS[@]}"; do
-        if ping -c1 -W2 "$host" &>/dev/null; then
+        if ping -c2 -W1 "$host" &>/dev/null; then
             return 0
         fi
     done
     return 1
 }
-
-# Основная логика с учётом счётчика
-#if [ ! -f "$ORIGINAL_FILE" ]; then
-#    save_original_settings
-#fi
 
 # Читаем текущий счётчик, или ставим 0
 COUNTER=0
