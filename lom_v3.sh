@@ -2,8 +2,8 @@
 
 # --- Configuration ---
 CHECK_HOSTS=("8.8.8.8" "1.1.1.1" "9.9.9.9" "ya.ru") # Hosts to check for internet connectivity
-ORIGINAL_FILE="/var/tmp/gpu_nvtool_original"       # File to store original GPU settings
-COUNTER_FILE="/var/tmp/gpu_nvtool_counters"        # File to store counters and state
+ORIGINAL_FILE="/run/gpu_nvtool_original"       # File to store original GPU settings
+COUNTER_FILE="/run/gpu_nvtool_counters"        # File to store counters and state
 NVTOOL="/hive/sbin/nvtool"                         # Path to nvtool utility
 
 TELEGRAM_BOT_TOKEN="your_bot_token_here"
