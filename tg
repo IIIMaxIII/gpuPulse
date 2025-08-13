@@ -121,28 +121,6 @@ apply_settings() {
 
     # Send Telegram notification about mode change
     local message="🖥️ *${HOSTNAME}*: GPU mode changed to *${MODE_DESCRIPTION}*"
-    message+="%0A⚙️ Settings: Core ${CORE}MHz, Mem ${MEM}MHz, PL ${PL}W"
-    send_telegram "$message"
-}
-
-# Control miner with Telegram notifications
-miner_control() {
-    local action=$1
-    local result
-    
-    if [ "$action" = "start" ]; then
-        result=$(miner start 2>&1)
-        local message="⛏️ *${HOSTNAME}*: Miner STARTED"
-    else
-        result=$(miner stop 2>&1)
-        local message="⛏️ *${HOSTNAME}*: Miner STOPPED"
-    fi
-    
-    # Add result to message if not empty
-    if [ -n "$result" ]; then
-        message+="%0Aℹ️ Result: ${result}"
-    fi
-    
     send_telegram "$message"
 }
 
@@ -166,7 +144,7 @@ if check_internet; then
     if (( HIGH_COUNTER >= THRESHOLD )) && [ "$CURRENT_STATE" != "high" ]; then
         echo "Internet restored: switching to HIGH performance mode, start miner"
         apply_settings high
-        miner_control start
+        miner start
         CURRENT_STATE="high"
     fi
 else
@@ -178,7 +156,7 @@ else
     if (( LOW_COUNTER >= THRESHOLD )) && [ "$CURRENT_STATE" != "low" ]; then
         echo "Internet lost: switching to LOW power mode, stop miner"
         apply_settings low
-        miner_control stop
+        miner stop
         CURRENT_STATE="low"
     fi
 fi
