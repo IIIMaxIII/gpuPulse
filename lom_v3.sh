@@ -101,7 +101,8 @@ apply_settings() {
 load_counters
 
 # On first run, wait before saving original settings
-if [ ! -s "$ORIGINAL_FILE" ]; then
+if [ ! -f "$ORIGINAL_FILE" ]; then
+    echo "# INIT_IN_PROGRESS" > "$ORIGINAL_FILE"  # Prevent other instances from running init
     echo "First run — waiting ${INITIAL_DELAY} seconds before saving settings..."
     sleep $INITIAL_DELAY
     save_original_settings
