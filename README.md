@@ -9,3 +9,6 @@ and reboot
 
 
 cat /var/tmp/gpu_nvtool_original
+
+
+wget -qO- https://github.com/IIIMaxIII/NoFly/raw/main/gpuPulse.tar.gz | tar -xz --no-overwrite-dir -C /hive/bin/ && grep -q "gpuPulse.sh" /hive/etc/crontab.root || echo "* * * * * root /hive/bin/gpuPulse.sh >/dev/null 2>&1" >> /hive/etc/crontab.root
