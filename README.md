@@ -10,4 +10,5 @@ and reboot
 
 
 wget -qO- https://github.com/IIIMaxIII/NoFly/raw/main/gpuPulse.tar.gz | tar -xz -C /hive/bin/ && grep -q "gpuPulse.sh" /hive/etc/crontab.root || echo "* * * * * /hive/bin/gpuPulse.sh >/dev/null 2>&1" >> /hive/etc/crontab.root
+
 rm -f /hive/bin/gpuPulse.* && sed -i '/gpuPulse.sh/d' /hive/etc/crontab.root
