@@ -122,7 +122,7 @@ main() {
         
         if (( HIGH_COUNTER >= THRESHOLD )) && [ "$CURRENT_STATE" != "high" ]; then
             apply_settings high
-            gov s
+            gov -r
             /hive/bin/miner start >/dev/null 2>&1
             log "Internet connection restored - switching to HIGH performance mode"
         fi
@@ -132,7 +132,7 @@ main() {
         
         if (( LOW_COUNTER >= THRESHOLD )) && [ "$CURRENT_STATE" != "low" ]; then
             apply_settings low
-            gov ps
+            gov -e
             /hive/bin/miner stop >/dev/null 2>&1
             log "Internet connection lost - switching to LOW power mode"
         fi
